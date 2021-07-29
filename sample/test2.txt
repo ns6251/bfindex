@@ -1,0 +1,10 @@
+pwd
+cat
+ls
+which
+echo
+awk
+ps
+top
+free
+exit
