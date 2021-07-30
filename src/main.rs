@@ -1,13 +1,13 @@
 use std::{
-    env,
-    fs::read_to_string,
+    env, fs,
     hash::Hash,
-    io::{self, stdin, Result, Write},
+    io::{self, stdin, Write},
+    mem,
     path::{Path, PathBuf},
     process::exit,
 };
 
-use blake2::{digest::generic_array::transmute, Blake2b, Digest};
+use blake2::{Blake2b, Digest};
 
 const HASH_N: usize = 3;
 
@@ -31,7 +31,7 @@ impl BfIndex {
 
             let mut n = [0u8; 8];
             n.clone_from_slice(&hash.as_slice()[..8]);
-            let n = unsafe { transmute::<[u8; 8], u64>(n) };
+            let n = unsafe { mem::transmute::<[u8; 8], u64>(n) };
             self.0 |= 1 << (n % 64);
         }
     }
@@ -48,8 +48,8 @@ pub struct Entry {
 }
 
 impl Entry {
-    pub fn new(path: &Path, keys: &[String; HASH_N]) -> Result<Self> {
-        let buf = read_to_string(path)?;
+    pub fn new(path: &Path, keys: &[String; HASH_N]) -> io::Result<Self> {
+        let buf = fs::read_to_string(path)?;
 
         let mut bfindex = BfIndex::new();
         buf.split_ascii_whitespace()
@@ -60,8 +60,8 @@ impl Entry {
         Ok(Self { bfindex, path })
     }
 
-    pub fn contains(&self, s: &str) -> Result<bool> {
-        let buf = read_to_string(&self.path)?;
+    pub fn contains(&self, s: &str) -> io::Result<bool> {
+        let buf = fs::read_to_string(&self.path)?;
         Ok(buf.contains(s))
     }
 }
@@ -80,13 +80,13 @@ impl DataStore {
         }
     }
 
-    pub fn register(&mut self, path: &Path) -> Result<()> {
+    pub fn register(&mut self, path: &Path) -> io::Result<()> {
         let entry = Entry::new(path, &self.keys)?;
         self.data.push(entry);
         Ok(())
     }
 
-    pub fn search(&self, word: &str) -> Result<()> {
+    pub fn search(&self, word: &str) -> io::Result<()> {
         if word.len() == 0 {
             return Ok(());
         }
