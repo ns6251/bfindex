@@ -26,13 +26,14 @@ impl BfIndex {
     }
 
     pub fn update(&mut self, word: &str, keys: &[String; HASH_N]) {
+        eprintln!("word: {:?}", word);
         for key in keys {
             let hash = Blake2b::new().chain(key).chain(word).finalize();
 
             let mut n = [0u8; 8];
             n.clone_from_slice(&hash.as_slice()[..8]);
             let n = unsafe { mem::transmute::<[u8; 8], u64>(n) };
-            self.0 |= 1 << (n % 64);
+            self.0 |= 1 << dbg!(n % 64);
         }
     }
 
@@ -115,6 +116,9 @@ fn main() {
 
     let args = env::args().collect::<Vec<String>>();
 
+    println!("register files ...");
+    io::stdout().flush().unwrap();
+
     for path in args[1..].iter() {
         let path = Path::new(&path);
         if let Err(e) = db.register(&path) {
@@ -122,6 +126,8 @@ fn main() {
             exit(1);
         }
     }
+
+    println!("done.");
 
     let mut buf = String::new();
 
